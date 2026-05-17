@@ -14,6 +14,7 @@ from aiogram.types import (
 )
 from dotenv import load_dotenv
 
+from .personas import format_leaderboard_anonymous
 from .session import SessionState
 from .store import create_session, get_session, remove_session
 
@@ -116,11 +117,10 @@ async def on_answer(callback: CallbackQuery) -> None:
 
     if session.state == SessionState.FINISHED:
         board = session.leaderboard()
-        lines = [f"🏆 Результати:"]
-        for rank, (uid, score) in enumerate(board, 1):
-            lines.append(f"{rank}. user_{uid} — {score}/{len(session.questions)}")
+        text = format_leaderboard_anonymous(board, session_id=chat_id)
+        text += f"\n\n(з {len(session.questions)} питань)"
         remove_session(chat_id)
-        await callback.message.answer("\n".join(lines))
+        await callback.message.answer(text)
         await callback.message.answer("/quiz — зіграти ще раз")
     else:
         q = session.current_question()

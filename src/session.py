@@ -22,9 +22,15 @@ class Question:
 
 
 class QuizSession:
-    def __init__(self, quiz_id: int, questions: list[Question]) -> None:
+    def __init__(
+        self,
+        quiz_id: int,
+        questions: list[Question],
+        reveal_mode: bool = False,
+    ) -> None:
         self.quiz_id = quiz_id
         self.questions = questions
+        self.reveal_mode = reveal_mode
         self.state = SessionState.WAITING
         self.current_index = 0
         # answers[user_id][question_index] = chosen_index
@@ -44,6 +50,12 @@ class QuizSession:
         else:
             self.state = SessionState.QUESTION
 
+    def reveal(self) -> None:
+        """Advance in reveal_mode: teacher-triggered after all answers collected."""
+        if not self.reveal_mode:
+            raise RuntimeError("reveal() only available in reveal_mode")
+        self.next_question()
+
     # ── actions ─────────────────────────────────────────────────────────────
 
     def answer(self, user_id: int, chosen_index: int) -> None:
@@ -53,6 +65,15 @@ class QuizSession:
         if self.current_index in user_answers:
             return  # duplicate — ignored
         user_answers[self.current_index] = chosen_index
+
+    def all_answered(self, participant_ids: set[int]) -> bool:
+        """True when every participant has answered the current question."""
+        answered = {
+            uid
+            for uid, qa in self.answers.items()
+            if self.current_index in qa
+        }
+        return participant_ids <= answered
 
     # ── queries ─────────────────────────────────────────────────────────────
 
