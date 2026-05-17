@@ -35,6 +35,8 @@ class QuizSession:
         self.current_index = 0
         # answers[user_id][question_index] = chosen_index
         self.answers: dict[int, dict[int, int]] = {}
+        # response_times[user_id][question_index] = ms | None
+        self.response_times: dict[int, dict[int, int | None]] = {}
 
     # ── transitions ─────────────────────────────────────────────────────────
 
@@ -58,13 +60,39 @@ class QuizSession:
 
     # ── actions ─────────────────────────────────────────────────────────────
 
-    def answer(self, user_id: int, chosen_index: int) -> None:
+    def answer(
+        self,
+        user_id: int,
+        chosen_index: int,
+        response_time_ms: int | None = None,
+    ) -> None:
         if self.state != SessionState.QUESTION:
             raise RuntimeError("Cannot answer outside of QUESTION state")
         user_answers = self.answers.setdefault(user_id, {})
         if self.current_index in user_answers:
             return  # duplicate — ignored
         user_answers[self.current_index] = chosen_index
+        self.response_times.setdefault(user_id, {})[self.current_index] = response_time_ms
+
+    def avg_response_time(self, question_index: int) -> float | None:
+        times = [
+            t[question_index]
+            for t in self.response_times.values()
+            if question_index in t and t[question_index] is not None
+        ]
+        return sum(times) / len(times) if times else None
+
+    def confidence_category(
+        self, user_id: int, question_index: int
+    ) -> str | None:
+        ms = self.response_times.get(user_id, {}).get(question_index)
+        if ms is None:
+            return None
+        if ms < 3000:
+            return "quick"
+        if ms <= 10000:
+            return "thoughtful"
+        return "uncertain"
 
     def all_answered(self, participant_ids: set[int]) -> bool:
         """True when every participant has answered the current question."""
