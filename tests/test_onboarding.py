@@ -1,6 +1,6 @@
 """Tests for teacher onboarding flow (#27)."""
 import pytest
-from datetime import datetime
+from datetime import datetime, timezone
 
 from src.onboarding import (
     OnboardingStep,
@@ -65,9 +65,9 @@ class TestOnboardingProgress:
         assert p.completed_at is None
 
     def test_started_at_is_set_on_creation(self):
-        before = datetime.utcnow()
+        before = datetime.now(tz=timezone.utc)
         p = self._make_progress()
-        after = datetime.utcnow()
+        after = datetime.now(tz=timezone.utc)
         assert before <= p.started_at <= after
 
 

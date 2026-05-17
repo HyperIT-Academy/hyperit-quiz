@@ -22,14 +22,16 @@ class SpacedScheduler:
         # (quiz_id, question_id) → date when last result was recorded
         self._last_recorded: dict[tuple[int, int], date] = {}
 
-    def record_result(self, quiz_id: int, question_id: int, correct: bool) -> None:
+    def record_result(
+        self, quiz_id: int, question_id: int, correct: bool, on: date | None = None
+    ) -> None:
         """Відстежує кількість правильних відповідей підряд per question."""
         key = (quiz_id, question_id)
         if correct:
             self._streaks[key] = self._streaks.get(key, 0) + 1
         else:
             self._streaks[key] = 0
-        self._last_recorded[key] = date.today()
+        self._last_recorded[key] = on if on is not None else date.today()
 
     def next_review_date(
         self,

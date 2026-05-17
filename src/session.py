@@ -53,6 +53,8 @@ class QuizSession:
         self.state = SessionState.QUESTION
 
     def next_question(self) -> None:
+        if self.state != SessionState.QUESTION:
+            raise RuntimeError("next_question() requires QUESTION state")
         self.current_index += 1
         if self.current_index >= len(self.questions):
             self.state = SessionState.FINISHED

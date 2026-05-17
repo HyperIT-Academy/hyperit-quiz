@@ -1,7 +1,7 @@
 """Anti-cheat monitor — виявлення підозрілої активності (#11)."""
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import defaultdict, deque
 from dataclasses import dataclass, field
 from enum import Enum
 
@@ -29,8 +29,7 @@ class AntiCheatMonitor:
 
     def __init__(self) -> None:
         self._events: list[SuspicionEvent] = []
-        # (user_id, q_idx, timestamp_ms)
-        self._submit_log: list[tuple[int, int, int]] = []
+        self._submit_log: dict[int, deque[int]] = defaultdict(deque)  # user_id → timestamps
 
     def check_response_time(
         self, user_id: int, question_index: int, response_time_ms: int
@@ -53,15 +52,12 @@ class AntiCheatMonitor:
         self, user_id: int, question_index: int, timestamp_ms: int
     ) -> SuspicionEvent | None:
         """Логує submit. Повертає ANSWER_FLOOD якщо >FLOOD_THRESHOLD у FLOOD_WINDOW_MS."""
-        self._submit_log.append((user_id, question_index, timestamp_ms))
-
-        # Рахуємо submits цього user у вікні [timestamp_ms - FLOOD_WINDOW_MS, timestamp_ms]
-        window_start = timestamp_ms - self.FLOOD_WINDOW_MS
-        recent = [
-            ts
-            for uid, _, ts in self._submit_log
-            if uid == user_id and window_start <= ts <= timestamp_ms
-        ]
+        log = self._submit_log[user_id]
+        log.append(timestamp_ms)
+        cutoff = timestamp_ms - self.FLOOD_WINDOW_MS
+        while log and log[0] < cutoff:
+            log.popleft()
+        recent = [ts for ts in log if ts >= cutoff]
 
         if len(recent) > self.FLOOD_THRESHOLD:
             event = SuspicionEvent(

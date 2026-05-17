@@ -53,6 +53,7 @@ class ConsentManager:
             guardian_id=guardian_id,
         )
         self._records[user_id] = record
+        self._allowed_categories.pop(user_id, None)  # GDPR: нова згода = чиста авторизація
         return record
 
     def deny(self, user_id: int) -> ConsentRecord:

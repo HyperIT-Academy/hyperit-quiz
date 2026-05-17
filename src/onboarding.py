@@ -1,6 +1,6 @@
 """Teacher onboarding flow — closes #27."""
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 
 
@@ -33,7 +33,7 @@ _STEP_DISPLAY = {
 class OnboardingProgress:
     teacher_id: int
     completed_steps: list[OnboardingStep] = field(default_factory=list)
-    started_at: datetime = field(default_factory=datetime.utcnow)
+    started_at: datetime = field(default_factory=lambda: datetime.now(tz=timezone.utc))
     completed_at: datetime | None = None
 
     @property
@@ -80,7 +80,7 @@ class OnboardingManager:
             progress.completed_steps.append(step)
 
         if progress.is_complete and progress.completed_at is None:
-            progress.completed_at = datetime.utcnow()
+            progress.completed_at = datetime.now(tz=timezone.utc)
 
         return progress
 
