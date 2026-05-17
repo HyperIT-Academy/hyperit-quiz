@@ -126,3 +126,30 @@ class QuizSession:
             key=lambda x: x[1],
             reverse=True,
         )
+
+    # ── post-game analysis ───────────────────────────────────────────────────
+
+    def question_accuracy(self, question_index: int) -> float | None:
+        """Fraction of correct answers for a question. None if no answers."""
+        correct_idx = self.questions[question_index].correct_index
+        answers = [
+            qa[question_index]
+            for qa in self.answers.values()
+            if question_index in qa
+        ]
+        if not answers:
+            return None
+        return sum(1 for a in answers if a == correct_idx) / len(answers)
+
+    def weak_questions(self, threshold: float = 0.6) -> list[Question]:
+        """Questions where accuracy < threshold (default 60%)."""
+        result = []
+        for idx, q in enumerate(self.questions):
+            acc = self.question_accuracy(idx)
+            if acc is not None and acc < threshold:
+                result.append(q)
+        return result
+
+    def repeat_pack(self) -> list[Question]:
+        """Weak questions to re-run as a follow-up session."""
+        return self.weak_questions()
