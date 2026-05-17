@@ -19,6 +19,13 @@ class Question:
     options: list[str]
     correct_index: int
     explanation: str
+    code_language: str | None = None
+    # option_index → misconception label shown when that wrong option chosen
+    option_misconceptions: dict[int, str] = field(default_factory=dict)
+
+    @property
+    def is_code_question(self) -> bool:
+        return self.code_language is not None
 
 
 class QuizSession:
